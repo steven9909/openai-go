@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openai/openai-go/internal"
-	"github.com/openai/openai-go/internal/apierror"
-	"github.com/openai/openai-go/internal/apiform"
-	"github.com/openai/openai-go/internal/apiquery"
+	"github.com/openai/openai-go/v2/internal"
+	"github.com/openai/openai-go/v2/internal/apierror"
+	"github.com/openai/openai-go/v2/internal/apiform"
+	"github.com/openai/openai-go/v2/internal/apiquery"
 	"github.com/tidwall/gjson"
 )
 
@@ -137,11 +137,13 @@ func NewRequestConfig(ctx context.Context, method string, u string, body any, ds
 	// Fallback to json serialization if none of the serialization functions that we expect
 	// to see is present.
 	if body != nil && !hasSerializationFunc {
-		content, err := json.Marshal(body)
-		if err != nil {
+		buf := new(bytes.Buffer)
+		enc := json.NewEncoder(buf)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(body); err != nil {
 			return nil, err
 		}
-		reader = bytes.NewBuffer(content)
+		reader = buf
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, u, nil)

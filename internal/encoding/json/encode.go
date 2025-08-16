@@ -19,8 +19,6 @@ import (
 	"encoding"
 	"encoding/base64"
 	"fmt"
-	"github.com/openai/openai-go/internal/encoding/json/sentinel"
-	"github.com/openai/openai-go/internal/encoding/json/shims"
 	"math"
 	"reflect"
 	"slices"
@@ -30,6 +28,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 	_ "unsafe" // for linkname
+
+	"github.com/openai/openai-go/v2/internal/encoding/json/sentinel"
+	"github.com/openai/openai-go/v2/internal/encoding/json/shims"
 )
 
 // Marshal returns the JSON encoding of v.
@@ -177,7 +178,11 @@ func Marshal(v any) ([]byte, error) {
 	e := newEncodeState()
 	defer encodeStatePool.Put(e)
 
-	err := e.marshal(v, encOpts{escapeHTML: true})
+	// SHIM(begin): don't escape HTML by default
+	err := e.marshal(v, encOpts{escapeHTML: shims.EscapeHTMLByDefault})
+	// ORIGINAL:
+	//  err := e.marshal(v, encOpts{escapeHTML: true})
+	// SHIM(end)
 	if err != nil {
 		return nil, err
 	}
